@@ -4,8 +4,8 @@ from rest_framework import viewsets , status , mixins
 from rest_framework.permissions import IsAuthenticated , IsAdminUser
 from rest_framework.decorators import permission_classes , api_view
 
-from .models import Order , OrderItem
-from .serializers import OrderSerializer
+from .models import *
+from .serializers import *
 from products.models import Product
 
 # Create your views here.
@@ -84,3 +84,52 @@ def new_order(request):
             product.save()
         serializer = OrderSerializer(order , many=False)
         return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_to_cart(request):
+    user = request.user
+    data = request.data
+    
+    product = get_object_or_404(Product , id=data['product'])
+    
+    quantity = int(data.get('quantity' , 1))
+    
+    cart , created = Cart.objects.get_or_create(
+        user=user
+    )
+    
+    cart_item , created = CartItem.objects.get_or_create(
+        cart=cart,
+        product=product
+    )
+    
+    if not created :
+        cart_item.quantity += quantity
+    else:
+        cart_item.quantity = quantity 
+    
+    cart_item.save()
+    
+    return Response({
+        "success" : True,
+        "message" : "Producted Added To Cart" 
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_cart(request):
+    cart = Cart.objects.select_related('user').prefetch_related('cart_items__product').filter(user=request.user).first()
+    
+    if not cart :
+        return Response({"cart_item":[]})
+    
+    serializers = CartSerializer(cart)
+    return Response(serializers.data)
+
+
+
+
+
+

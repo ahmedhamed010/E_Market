@@ -4,3 +4,5 @@ from .models import *  #<= all
 
 admin.site.register(Order)
 admin.site.register(OrderItem)
+admin.site.register(Cart)
+admin.site.register(CartItem)

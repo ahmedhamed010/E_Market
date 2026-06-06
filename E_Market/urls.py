@@ -3,9 +3,11 @@ from django.urls import path , include
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from order.views import add_to_cart , get_cart
 
 urlpatterns = [     
     path('admin/', admin.site.urls),
+    
     path('api/', include('products.urls')),
         # تسجيل مستخدم جديد & وعرض المستخدم
     path('account/', include('account.urls')),
@@ -15,6 +17,10 @@ urlpatterns = [
         # تسجيل الدخول (الحصول على JWT Token) & وتجديد التوكين 
     path('api/token/', TokenObtainPairView.as_view() , name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    
+    # path("__debuge__/",include("debug_toolbar.urls")),
+    path('cart/add/', add_to_cart,name='add_to_cart'),
+    path('get/cart/', get_cart,name='get_cart'),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
