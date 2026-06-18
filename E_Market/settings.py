@@ -69,14 +69,15 @@ MIDDLEWARE = [
 # ]
 
 
-# EMAIL_BACKEND = 'django.core.mail.backends.stmp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
-EMAIL_HOST_USER = '16eab1aea39406'
-EMAIL_HOST_PASSWORD = 'dca77a69951d06'
-EMAIL_PORT = '2525'
-EMAIL_USE_TLS: False
-EMAIL_USE_SSL: False
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'ahmedhamedfarahat18@gmail.com'
+EMAIL_HOST_PASSWORD = 'snojfjwguxloppha'
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
 
 
 ROOT_URLCONF = 'E_Market.urls'

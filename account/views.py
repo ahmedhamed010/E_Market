@@ -8,8 +8,13 @@ from rest_framework.permissions import IsAuthenticated , AllowAny
 from rest_framework.decorators import action , api_view
 from django.utils.crypto import get_random_string 
 from django.core.mail import send_mail
+from django.utils import timezone
+import random
+import secrets
 
+from .models import *
 from .serializers import SignUpSerializer , UserSerializer , UserUpdateSerializer
+from utils.email_utils import send_otp_email
 
 # Create your views here.
 
@@ -55,7 +60,7 @@ def get_current_host(request):
 
 
 @api_view(['POST'])
-def forgot_password(request):
+def forgot_password_NoOTP(request):
     data = request.data
     user = get_object_or_404(User , email=data['email'])
     token = get_random_string(40)
@@ -76,7 +81,7 @@ def forgot_password(request):
 
 
 @api_view(['POST'])
-def reset_password(request , token):
+def reset_password_NoOTP(request , token):
     data = request.data
     user = get_object_or_404(User , profile__reset_password_token = token)
     
@@ -95,4 +100,82 @@ def reset_password(request , token):
 
 
 
+@api_view(['POST'])
+def forgot_password(request):
 
+    email = request.data.get('email')
+
+    try:
+        user = User.objects.get(email=email)
+
+    except User.DoesNotExist:
+        return Response({
+            'error':'User not found'} , status=status.HTTP_404_NOT_FOUND)
+
+    otp = str(secrets.randbelow(900000) + 100000)
+
+    profile, created = Profile.objects.get_or_create(
+    user=user
+)
+
+    profile.reset_password_token = otp
+    profile.reset_password_expire = timezone.now() + timedelta(minutes= 5)
+
+    profile.save()
+
+    send_otp_email(
+        email=user.email,
+        otp=otp
+    )
+
+    return Response({
+        'message':'OTP sent successfully'
+    })
+
+
+
+@api_view(['POST'])
+def reset_password(request):
+
+    email = request.data.get('email')
+    otp = request.data.get('otp')
+    password = request.data.get('password')
+    
+    if not password or len(password) < 8:
+        return Response ({
+            'error' : 'Password must be at least 8 characters'
+            } , status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(email=email)
+
+    except User.DoesNotExist:
+        return Response({
+            'error':'User not found'
+        } , status=status.HTTP_404_NOT_FOUND)
+
+    profile = user.profile
+    
+    if profile.reset_password_expire < timezone.now():
+        return Response({
+            'error' : 'OTP Expired'
+            } , status=status.HTTP_400_BAD_REQUEST)
+
+    if profile.reset_password_token != otp:
+
+        return Response({
+            'error':'Invalid OTP'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    user.set_password(password)
+
+    user.save()
+
+    profile.reset_password_token = ""
+    profile.reset_password_expire = None
+
+    profile.save()
+
+    return Response({
+        'message':'Password changed successfully'
+    })
